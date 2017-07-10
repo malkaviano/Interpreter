@@ -2,4 +2,4 @@ require_relative 'interpreter'
 
 string = "not false"
 
-p Interpreter.interpret string
+p Malk::Interpreter.interpret string

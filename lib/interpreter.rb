@@ -1,18 +1,19 @@
 require_relative 'expressions'
 
 class Interpreter
-  def self.build_expression(expr)
-    tokens = tokenize(expr)
+  def self.interpret(expr)
+    parsed_expr = parse(expr)
 
-    classified_tokens = classify_tokens(tokens)
-=begin
-p expressions
-p values
-=end
-    build_tree(classified_tokens)
+    tokens = tokenize(parsed_expr)
+
+    classified_tokens = classify(tokens)
+
+    expression = build_expression(classified_tokens)
+
+    expression.interpret
   end
 
-  def self.build_tree(classified_tokens)
+  def self.build_expression(classified_tokens)
     values = []
 
     classified_tokens.each do |token|
@@ -27,7 +28,82 @@ p values
       end
     end
 
-    values
+    values.pop
+  end
+
+  def self.classify(tokens)
+    token_queue = []
+
+    tokens.each do |queue|
+      token_queue += classify_tokens(queue)
+    end
+
+    token_queue
+  end
+
+  def self.tokenize(parsed_expr)
+    tokens = []
+
+    parsed_expr.each do |expr|
+
+      if expr.kind_of? Array
+        tokens << tokenize(expr)
+      else
+        tokens << tokenize_expr(expr)
+      end
+    end
+
+    tokens
+  end
+
+  def self.parse(expr)
+    expression = []
+    subCount = 0
+
+    while(closeP = expr.index(")"))
+      startP = expr.rindex("(", closeP)
+
+      sliceEnd = closeP - startP + 1
+
+      slice = expr.slice!(startP, sliceEnd)
+
+      expression << slice.gsub("(", "").gsub(")", "")
+
+      expr.insert(startP, "@#{subCount}")
+
+      subCount += 1
+    end
+
+    expression << expr
+  end
+
+  def self.tokenize_expr(expr)
+    tokens = []
+
+    words = expr.split(' ')
+
+    words.each do |word|
+      case word
+        when "not"
+          tokens << "NotExpression"
+        when "and"
+          tokens << "AndExpression"
+        when "nand"
+          tokens << "NandExpression"
+        when "or"
+          tokens << "OrExpression"
+        when "nor"
+          tokens << "NorExpression"
+        when "xor"
+          tokens << "XorExpression"
+        when "true", "false"
+          tokens << word
+        else
+          tokens << word
+      end
+    end
+
+    tokens
   end
 
   def self.classify_tokens(tokens)
@@ -36,6 +112,8 @@ p values
     literals = 0
 
     tokens.each do |token|
+      next if token.include? "@"
+
       if !(token.include? "Expression")
         expressions << "Literal:#{token}"
         literals += 1
@@ -59,29 +137,5 @@ p values
     expressions
   end
 
-  def self.tokenize(expr)
-    tokens = expr.split(' ')
-    expressions = []
-
-    tokens.each do |token|
-      case token
-        when "not"
-          expressions << "NotExpression"
-        when "and"
-          expressions << "AndExpression"
-        when "nand"
-          expressions << "NandExpression"
-        when "or"
-          expressions << "OrExpression"
-        when "nor"
-          expressions << "NorExpression"
-        when "xor"
-          expressions << "XorExpression"
-        else
-          expressions << token
-      end
-    end
-
-    expressions
-  end
+  private_class_method :tokenize_expr, :classify_tokens
 end

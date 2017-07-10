@@ -1,7 +1,5 @@
 require_relative 'interpreter'
 
-string = "false or not true and true"
+string = "not false"
 
-expr = Interpreter.build_expression string
-
-p expr
+p Interpreter.interpret string

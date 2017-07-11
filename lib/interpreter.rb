@@ -19,7 +19,9 @@ module Malk
 
       classified_tokens.each do |token|
         if token.class == String
-          values << Literal.new(token.gsub("Literal:", ""))
+          className, value = token.split("%")
+
+          values << Object.const_get(className).new(value)
         else
           args = []
 
@@ -58,24 +60,26 @@ module Malk
     end
 
     def self.parse(expr)
+      string = expr.dup
+
       expression = []
       subCount = 0
 
-      while(closeP = expr.index(")"))
-        startP = expr.rindex("(", closeP)
+      while(closeP = string.index(")"))
+        startP = string.rindex("(", closeP)
 
         sliceEnd = closeP - startP + 1
 
-        slice = expr.slice!(startP, sliceEnd)
+        slice = string.slice!(startP, sliceEnd)
 
         expression << slice.gsub("(", "").gsub(")", "")
 
-        expr.insert(startP, "@#{subCount}")
+        string.insert(startP, "@#{subCount}")
 
         subCount += 1
       end
 
-      expression << expr
+      expression << string
     end
 
     def self.tokenize_expr(expr)
@@ -98,7 +102,7 @@ module Malk
           when "xor"
             tokens << "Malk::XorExpression"
           when "true", "false"
-            tokens << word
+            tokens << "Malk::Boolean%#{word}"
           else
             tokens << word
         end
@@ -116,7 +120,7 @@ module Malk
         next if token.include? "@"
 
         if !(token.include? "Expression")
-          expressions << "Literal:#{token}"
+          expressions << token
           literals += 1
 
           if nextOp[-1]&.arguments == 1

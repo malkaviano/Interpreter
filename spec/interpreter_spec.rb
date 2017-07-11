@@ -35,25 +35,25 @@ describe Malk::Interpreter do
     end
 
     context 'when [ "not true and false" ] is tokenized' do
-      let(:expected) { [[ "Malk::NotExpression", "true", "Malk::AndExpression", "false" ]] }
+      let(:expected) { [[ "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::Boolean%false" ]] }
 
       it_behaves_like "tokenizing an expression", [ "not true and false" ]
     end
 
     context 'when [ "not true and not false" ] is tokenized' do
-      let(:expected) { [[ "Malk::NotExpression", "true", "Malk::AndExpression", "Malk::NotExpression", "false" ]] }
+      let(:expected) { [[ "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::NotExpression", "Malk::Boolean%false" ]] }
 
       it_behaves_like "tokenizing an expression", [ "not true and not false" ]
     end
 
     context 'when [ "true or false", "not @0" ] is tokenized' do
-      let(:expected) { [[ "true", "Malk::OrExpression", "false" ], [ "Malk::NotExpression", "@0" ]] }
+      let(:expected) { [[ "Malk::Boolean%true", "Malk::OrExpression", "Malk::Boolean%false" ], [ "Malk::NotExpression", "@0" ]] }
 
       it_behaves_like "tokenizing an expression", [ "true or false", "not @0" ]
     end
 
     context 'when [ "true or false", "false or true", "not @1", "not @0 and @2" ] is tokenized' do
-      let(:expected) { [[ "true", "Malk::OrExpression", "false" ], [ "false", "Malk::OrExpression" ,"true" ], [ "Malk::NotExpression",  "@1" ], [ "Malk::NotExpression",  "@0", "Malk::AndExpression", "@2" ]] }
+      let(:expected) { [[ "Malk::Boolean%true", "Malk::OrExpression", "Malk::Boolean%false" ], [ "Malk::Boolean%false", "Malk::OrExpression" ,"Malk::Boolean%true" ], [ "Malk::NotExpression",  "@1" ], [ "Malk::NotExpression",  "@0", "Malk::AndExpression", "@2" ]] }
 
       it_behaves_like "tokenizing an expression", [ "true or false", "false or true", "not @1", "not @0 and @2" ]
     end
@@ -66,40 +66,40 @@ describe Malk::Interpreter do
       end
     end
 
-    context 'when [[ "Malk::NotExpression", "true", "Malk::AndExpression", "false" ]] is classifed' do
-      let(:expected) { [ "Literal:true", Malk::NotExpression, "Literal:false", Malk::AndExpression ] }
+    context 'when [[ "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::Boolean%false" ]] is classifed' do
+      let(:expected) { [ "Malk::Boolean%true", Malk::NotExpression, "Malk::Boolean%false", Malk::AndExpression ] }
 
-      it_behaves_like "classifying tokens", [[ "Malk::NotExpression", "true", "Malk::AndExpression", "false" ]]
+      it_behaves_like "classifying tokens", [[ "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::Boolean%false" ]]
     end
 
-    context 'when [[ "true", "Malk::AndExpression", "Malk::NotExpression", "false" ]] is classifed' do
-      let(:expected) { [ "Literal:true", "Literal:false", Malk::NotExpression, Malk::AndExpression ] }
+    context 'when [[ "Malk::Boolean%true", "Malk::AndExpression", "Malk::NotExpression", "Malk::Boolean%false" ]] is classifed' do
+      let(:expected) { [ "Malk::Boolean%true", "Malk::Boolean%false", Malk::NotExpression, Malk::AndExpression ] }
 
-      it_behaves_like "classifying tokens", [[ "true", "Malk::AndExpression", "Malk::NotExpression", "false" ]]
+      it_behaves_like "classifying tokens", [[ "Malk::Boolean%true", "Malk::AndExpression", "Malk::NotExpression", "Malk::Boolean%false" ]]
     end
 
-    context 'when [[ "false", "Malk::OrExpression", "Malk::NotExpression", "true", "Malk::AndExpression", "true" ]] is classifed' do
-      let(:expected) { [ "Literal:false", "Literal:true", Malk::NotExpression, Malk::OrExpression, "Literal:true", Malk::AndExpression ] }
+    context 'when [[ "Malk::Boolean%false", "Malk::OrExpression", "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::Boolean%true" ]] is classifed' do
+      let(:expected) { [ "Malk::Boolean%false", "Malk::Boolean%true", Malk::NotExpression, Malk::OrExpression, "Malk::Boolean%true", Malk::AndExpression ] }
 
-      it_behaves_like "classifying tokens", [[ "false", "Malk::OrExpression", "Malk::NotExpression", "true", "Malk::AndExpression", "true" ]]
+      it_behaves_like "classifying tokens", [[ "Malk::Boolean%false", "Malk::OrExpression", "Malk::NotExpression", "Malk::Boolean%true", "Malk::AndExpression", "Malk::Boolean%true" ]]
     end
 
-    context 'when [[ "Malk::NotExpression", "Malk::NotExpression", "false" ]] is classifed' do
-      let(:expected) { [ "Literal:false", Malk::NotExpression, Malk::NotExpression ] }
+    context 'when [[ "Malk::NotExpression", "Malk::NotExpression", "Malk::Boolean%false" ]] is classifed' do
+      let(:expected) { [ "Malk::Boolean%false", Malk::NotExpression, Malk::NotExpression ] }
 
-      it_behaves_like "classifying tokens", [[ "Malk::NotExpression", "Malk::NotExpression", "false" ]]
+      it_behaves_like "classifying tokens", [[ "Malk::NotExpression", "Malk::NotExpression", "Malk::Boolean%false" ]]
     end
 
-    context 'when [[ "true", "Malk::OrExpression", "false" ], [ "Malk::NotExpression", "@0" ]] is classifed' do
-      let(:expected) { [ "Literal:true", "Literal:false", Malk::OrExpression, Malk::NotExpression ] }
+    context 'when [[ "Malk::Boolean%true", "Malk::OrExpression", "Malk::Boolean%false" ], [ "Malk::NotExpression", "@0" ]] is classifed' do
+      let(:expected) { [ "Malk::Boolean%true", "Malk::Boolean%false", Malk::OrExpression, Malk::NotExpression ] }
 
-      it_behaves_like "classifying tokens", [[ "true", "Malk::OrExpression", "false" ], [ "Malk::NotExpression", "@0" ]]
+      it_behaves_like "classifying tokens", [[ "Malk::Boolean%true", "Malk::OrExpression", "Malk::Boolean%false" ], [ "Malk::NotExpression", "@0" ]]
     end
   end
 
   describe "#build_expression" do
-    context 'when [ "Literal:false", "Literal:true", Malk::NotExpression, Malk::OrExpression, "Literal:true", Malk::AndExpression ] is passed' do
-      let(:input) { [ "Literal:false", "Literal:true", Malk::NotExpression, Malk::OrExpression, "Literal:true", Malk::AndExpression ] }
+    context 'when [ "Malk::Boolean%false", "Malk::Boolean%true", Malk::NotExpression, Malk::OrExpression, "Malk::Boolean%true", Malk::AndExpression ] is passed' do
+      let(:input) { [ "Malk::Boolean%false", "Malk::Boolean%true", Malk::NotExpression, Malk::OrExpression, "Malk::Boolean%true", Malk::AndExpression ] }
       let(:expected) { Malk::AndExpression }
       it 'returns Malk::NotExpression' do
         expect(described_class.build_expression(input).class).to be expected

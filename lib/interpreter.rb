@@ -27,28 +27,28 @@ module Malk
     end
 
     def build_expression(tokens)
-      values_stack = []
+      stack = []
 
       tokens.each do |token|
 
         if !token.kind_of?(Array) && token.ancestors.include?(Operator)
           params = []
 
-          token.arguments.times {|_| params << values_stack.pop }
+          token.arguments.times {|_| params << stack.pop }
 
-          values_stack << token.new(params.reverse)
+          stack << token.new(params.reverse)
 
         else
           c = token.shift
 
-          params = token.dup << @ctx
+          params = token << @ctx
 
-          values_stack << c.new(params)
+          stack << c.new(params)
 
         end
       end
 
-      values_stack.pop
+      stack.pop
     end
 
     def build_token_queue(tokens)

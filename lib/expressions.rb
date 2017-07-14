@@ -1,29 +1,26 @@
 require 'forwardable'
 
 module Malk
-  class UnaryExpression
+  class Operator
+    def initialize(args)
+      args.size.times {|i| instance_variable_set("@arg#{i + 1}", args[i])}
+    end
+  end
+
+  class UnaryOperator < Operator
     def self.arguments
       1
     end
 
-    def initialize(args)
-      @arg = args[0]
-    end
-
     private
       def evaluate(op)
-        instance_eval("#{op}@arg.interpret")
+        instance_eval("#{op}@arg1.interpret")
       end
   end
 
-  class BinaryExpression
+  class BinaryOperator < Operator
     def self.arguments
       2
-    end
-
-    def initialize(args)
-      @arg1 = args[0]
-      @arg2 = args[1]
     end
 
     private
@@ -33,28 +30,37 @@ module Malk
   end
 
   class Literal
-    def value
-      @arg
+    def initialize(args)
+      @value = args.shift
     end
 
-    def initialize(arg)
-      @arg = arg
-    end
-  end
-
-  class Boolean < Literal
     def interpret
-      !(@arg.include? "false")
-    end
-
-    def ==(other)
-      return nil unless other.kind_of? Boolean
-
-      value == other.value
+      @value
     end
   end
 
-  class NotExpression < UnaryExpression
+  class Variable
+    def initialize(args)
+      @identifier = args.shift.gsub("$", "").to_sym
+      @ctx = args.shift
+    end
+
+    def interpret
+      @ctx.fetch(@identifier)
+    end
+  end
+
+  class Expression
+    def initialize(expr)
+      @expr = expr
+    end
+
+    def interpret
+      instance_eval(@expr)
+    end
+  end
+
+  class NotOperator < UnaryOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
@@ -64,7 +70,7 @@ module Malk
     end
   end
 
-  class AndExpression < BinaryExpression
+  class AndOperator < BinaryOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
@@ -74,7 +80,7 @@ module Malk
     end
   end
 
-  class OrExpression < BinaryExpression
+  class OrOperator < BinaryOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
@@ -84,27 +90,27 @@ module Malk
     end
   end
 
-  class NandExpression < AndExpression
+  class NandOperator < AndOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
 
     def interpret
-      NotExpression.new([ AndExpression.new([ @arg1, @arg2 ]) ]).interpret
+      NotOperator.new([ AndOperator.new([ @arg1, @arg2 ]) ]).interpret
     end
   end
 
-  class NorExpression < OrExpression
+  class NorOperator < OrOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
 
     def interpret
-      NotExpression.new([ OrExpression.new([ @arg1, @arg2 ]) ]).interpret
+      NotOperator.new([ OrOperator.new([ @arg1, @arg2 ]) ]).interpret
     end
   end
 
-  class XorExpression < OrExpression
+  class XorOperator < OrOperator
     extend SingleForwardable
 
     def_delegator :superclass, :arguments
@@ -114,5 +120,5 @@ module Malk
     end
   end
 
-  private_constant :Literal, :UnaryExpression, :BinaryExpression
+  private_constant :Operator, :UnaryOperator, :BinaryOperator
 end

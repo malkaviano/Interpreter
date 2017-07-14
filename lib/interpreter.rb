@@ -2,49 +2,66 @@ require_relative 'expressions'
 
 module Malk
   class Interpreter
-    def self.interpret(expr)
+    def set_value_to(var_name, value)
+      @ctx[var_name.to_sym] = value
+    end
+
+    def get_value_for(var_name)
+      @ctx[var_name.to_sym]
+    end
+
+    def initialize(ctx = {})
+      @ctx = ctx
+    end
+
+    def interpret(expr)
       parsed_expr = parse(expr)
 
       tokens = tokenize(parsed_expr)
 
-      classified_tokens = classify(tokens)
+      reordered = build_token_queue(tokens)
 
-      expression = build_expression(classified_tokens)
+      expression = build_expression(reordered)
 
       expression.interpret
     end
 
-    def self.build_expression(classified_tokens)
-      values = []
+    def build_expression(tokens)
+      values_stack = []
 
-      classified_tokens.each do |token|
-        if token.class == String
-          className, value = token.split("%")
+      tokens.each do |token|
 
-          values << Object.const_get(className).new(value)
+        if !token.kind_of?(Array) && token.ancestors.include?(Operator)
+          params = []
+
+          token.arguments.times {|_| params << values_stack.pop }
+
+          values_stack << token.new(params.reverse)
+
         else
-          args = []
+          c = token.shift
 
-          token.arguments.times {|_| args << values.pop }
+          params = token.dup << @ctx
 
-          values << token.new(args.reverse)
+          values_stack << c.new(params)
+
         end
       end
 
-      values.pop
+      values_stack.pop
     end
 
-    def self.classify(tokens)
+    def build_token_queue(tokens)
       token_queue = []
 
       tokens.each do |queue|
-        token_queue += classify_tokens(queue)
+        token_queue += reorder(queue)
       end
 
       token_queue
     end
 
-    def self.tokenize(parsed_expr)
+    def tokenize(parsed_expr)
       tokens = []
 
       parsed_expr.each do |expr|
@@ -59,7 +76,7 @@ module Malk
       tokens
     end
 
-    def self.parse(expr)
+    def parse(expr)
       string = expr.dup
 
       expression = []
@@ -82,58 +99,62 @@ module Malk
       expression << string
     end
 
-    def self.tokenize_expr(expr)
+    def tokenize_expr(expr)
       tokens = []
 
       words = expr.split(' ')
 
       words.each do |word|
-        case word
-          when "not"
-            tokens << "Malk::NotExpression"
-          when "and"
-            tokens << "Malk::AndExpression"
-          when "nand"
-            tokens << "Malk::NandExpression"
-          when "or"
-            tokens << "Malk::OrExpression"
-          when "nor"
-            tokens << "Malk::NorExpression"
-          when "xor"
-            tokens << "Malk::XorExpression"
-          when "true", "false"
-            tokens << "Malk::Boolean%#{word}"
-          else
-            tokens << word
+        case
+        when word.include?("not")
+          tokens << Malk::NotOperator
+        when word.include?("nand")
+          tokens << Malk::NandOperator
+        when word.include?("and")
+          tokens << Malk::AndOperator
+        when word.include?("nor")
+          tokens << Malk::NorOperator
+        when word.include?("xor")
+          tokens << Malk::XorOperator
+        when word.include?("or")
+          tokens << Malk::OrOperator
+        when word.include?("@")
+          tokens << word
+        when word.include?("{")
+
+        when word.include?("$")
+          tokens << [ Malk::Variable, word ]
+        else
+          tokens << [ Malk::Literal, (word == "true") ]
         end
       end
 
       tokens
     end
 
-    def self.classify_tokens(tokens)
+    def reorder(tokens)
       expressions = []
       nextOp = []
-      literals = 0
+      values = 0
 
       tokens.each do |token|
-        next if token.include? "@"
+        next if token.kind_of? String
 
-        if !(token.include? "Expression")
+        if !token.kind_of?(Array) && token.ancestors.include?(Operator)
+          nextOp << token
+        else
           expressions << token
-          literals += 1
+          values += 1
 
           if nextOp[-1]&.arguments == 1
             expressions << nextOp.pop
           end
 
-          if nextOp[-1]&.arguments == 2 and literals == 2
+          if nextOp[-1]&.arguments == 2 and values == 2
             expressions << nextOp.pop
 
-            literals = 0
+            values = 0
           end
-        else
-          nextOp << Object.const_get(token)
         end
       end
 
@@ -142,6 +163,6 @@ module Malk
       expressions
     end
 
-    private_class_method :tokenize_expr, :classify_tokens
+    private :tokenize_expr, :reorder
   end
 end

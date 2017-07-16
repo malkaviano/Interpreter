@@ -1,4 +1,4 @@
-# Interpreter
+# Interpreter [![Build Status](https://travis-ci.org/malkaviano/Interpreter.svg?branch=master)](https://travis-ci.org/malkaviano/Interpreter)
 
 #### Simple Interpreter to parse boolean expressions, inspired by GoF design pattern. It tries to keep a fidelity to composite pattern.
 

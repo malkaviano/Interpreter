@@ -1,5 +1,5 @@
 language: ruby
 rvm:
-  - stable
+  - ruby-head
   - 2.4
   - 2.3
